@@ -2,56 +2,118 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AFTER HARRIER VR</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
         body {
             margin: 0;
             overflow: hidden;
             background-color: #000;
-            font-family: 'Courier New', monospace;
+            color: #fff;
+            font-family: 'Press Start 2P', cursive;
+            user-select: none;
+            -webkit-user-select: none;
         }
-        #info {
+
+        #game-container {
             position: absolute;
-            top: 10px;
-            left: 10px;
-            color: #0f0;
-            font-size: 14px;
-            z-index: 100;
-            background: rgba(0,0,0,0.7);
-            padding: 10px;
-            border: 1px solid #0f0;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
         }
-        #vr-button {
-            position: fixed !important;
-            bottom: 20px !important;
-            left: 50% !important;
-            transform: translateX(-50%) !important;
-            padding: 15px 40px !important;
-            border: 3px solid #0ff !important;
-            border-radius: 8px !important;
-            background: rgba(0, 255, 255, 0.2) !important;
-            color: #0ff !important;
-            font: bold 20px monospace !important;
-            cursor: pointer !important;
-            z-index: 9999 !important;
-            text-shadow: 0 0 10px #0ff !important;
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5) !important;
-            display: block !important;
+
+        #vr-info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 12px;
+            color: #00ff00;
+            text-shadow: 0 0 5px #00ff00;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        #start-screen h1 {
+            font-size: 48px;
+            color: #00ffff;
+            text-shadow: 0 0 20px #00ffff;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        #start-screen p {
+            font-size: 16px;
+            color: #ffff00;
+            margin: 10px;
+            text-align: center;
+        }
+
+        #start-screen button {
+            margin-top: 30px;
+            padding: 15px 30px;
+            font-size: 20px;
+            background: #00ffff;
+            color: #000;
+            border: none;
+            cursor: pointer;
+            font-family: 'Press Start 2P', cursive;
+            text-shadow: 0 0 5px #00ffff;
+            transition: all 0.3s;
+        }
+
+        #start-screen button:hover {
+            background: #ffff00;
+            box-shadow: 0 0 20px #ffff00;
+        }
+
+        .hidden {
+            display: none !important;
         }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
-    <div id="info">Initializing...</div>
+    <div id="game-container"></div>
+    <div id="vr-info">
+        <div>AFTER HARRIER VR</div>
+        <div id="vr-status">Initializing...</div>
+    </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script>
-// ========================================
-// AFTER HARRIER VR Edition
-// WebXR対応版
-// ========================================
+    <div id="start-screen">
+        <h1>AFTER<br>HARRIER<br>VR</h1>
+        <p>WebXR対応 VRゲーム</p>
+        <p>Meta Quest 2/3 推奨</p>
+        <button id="enter-vr-btn">ENTER VR</button>
+        <button id="start-flat-btn" style="margin-top: 10px;">PLAY FLAT</button>
+    </div>
 
-// --- Audio System ---
+<script>
+/**
+ * AFTER HARRIER VR - WebXR対応版
+ * Meta Quest等のVRヘッドセット対応
+ */
+
+// ============================================================================
+// AUDIO SYSTEM
+// ============================================================================
+
 class AudioSynth {
     constructor() {
         this.ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -59,7 +121,7 @@ class AudioSynth {
         this.compressor.connect(this.ctx.destination);
         
         this.masterGain = this.ctx.createGain();
-        this.masterGain.gain.value = 0.5;
+        this.masterGain.gain.value = 0.3;
         this.masterGain.connect(this.compressor);
 
         this.isPlaying = false;
@@ -81,10 +143,9 @@ class AudioSynth {
         osc.type = 'triangle';
         osc.frequency.value = freq;
         gain.gain.setValueAtTime(0.0, time);
-        gain.gain.linearRampToValueAtTime(0.6, time + 0.02);
+        gain.gain.linearRampToValueAtTime(0.4, time + 0.02);
         gain.gain.exponentialRampToValueAtTime(0.01, time + (this.mode === 'BOSS' ? 0.09 : 0.12));
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'lowpass';
+        const filter = this.ctx.createBiquadFilter();\n        filter.type = 'lowpass';
         filter.frequency.value = 600;
         osc.connect(filter);
         filter.connect(gain);
@@ -101,23 +162,7 @@ class AudioSynth {
         const freq = scale[Math.floor(Math.random() * scale.length)];
         osc.type = 'square';
         osc.frequency.value = freq * (Math.random() > 0.5 ? 2 : 1);
-        gain.gain.setValueAtTime(0.05, time);
-        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
-        osc.connect(gain);
-        gain.connect(this.masterGain);
-        osc.start(time);
-        osc.stop(time + 0.1);
-    }
-
-    playBossArp(time) {
-        if (Math.random() > 0.4) return;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        const scale = [330, 392, 493, 587, 698]; 
-        const freq = scale[Math.floor(Math.random() * scale.length)];
-        osc.type = 'sawtooth';
-        osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0.04, time);
+        gain.gain.setValueAtTime(0.03, time);
         gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
         osc.connect(gain);
         gain.connect(this.masterGain);
@@ -132,13 +177,9 @@ class AudioSynth {
         while (this.nextNoteTime < this.ctx.currentTime + 0.1) {
             const noteIndex = this.beatCount % sequence.length;
             this.playBassNote(sequence[noteIndex], this.nextNoteTime);
-            
             if (this.mode === 'BOSS') {
-                this.playBossArp(this.nextNoteTime);
-            } else {
                 this.playArpNote(this.nextNoteTime);
             }
-            
             this.nextNoteTime += tempo;
             this.beatCount++;
         }
@@ -156,7 +197,7 @@ class AudioSynth {
 
     stopMusic() {
         this.isPlaying = false;
-        if (this.timerID) cancelAnimationFrame(this.timerID);
+        cancelAnimationFrame(this.timerID);
     }
 
     playNormalBGM() {
@@ -174,35 +215,28 @@ class AudioSynth {
         const gain = this.ctx.createGain();
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(800, this.ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.1);
-        gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+        osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.05);
+        gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.05);
         osc.connect(gain);
         gain.connect(this.masterGain);
         osc.start();
-        osc.stop(this.ctx.currentTime + 0.1);
+        osc.stop(this.ctx.currentTime + 0.05);
     }
 
-    playMetalHit() {
+    playExplosion(type = 'MEDIUM') {
         const t = this.ctx.currentTime;
         const gain = this.ctx.createGain();
         gain.connect(this.masterGain);
-        const osc1 = this.ctx.createOscillator();
-        osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(1200, t);
-        osc1.frequency.exponentialRampToValueAtTime(800, t + 0.1);
-        const osc2 = this.ctx.createOscillator();
-        osc2.type = 'triangle';
-        osc2.frequency.setValueAtTime(1840, t); 
-        osc2.frequency.exponentialRampToValueAtTime(1200, t + 0.1);
-        gain.gain.setValueAtTime(0.6, t);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2); 
-        osc1.connect(gain);
-        osc2.connect(gain);
-        osc1.start(t);
-        osc1.stop(t + 0.2);
-        osc2.start(t);
-        osc2.stop(t + 0.2);
+        const osc = this.ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(150, t);
+        osc.frequency.exponentialRampToValueAtTime(50, t + 0.2);
+        gain.gain.setValueAtTime(0.3, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+        osc.connect(gain);
+        osc.start(t);
+        osc.stop(t + 0.2);
     }
 
     playWarning() {
@@ -211,105 +245,48 @@ class AudioSynth {
         gain.connect(this.masterGain);
         const osc = this.ctx.createOscillator();
         osc.type = 'square';
-        osc.frequency.setValueAtTime(880, t);
-        gain.gain.setValueAtTime(0.3, t);
-        gain.gain.setValueAtTime(0, t + 0.1); 
-        gain.gain.setValueAtTime(0.3, t + 0.2);
-        gain.gain.setValueAtTime(0, t + 0.3); 
+        osc.frequency.setValueAtTime(800, t);
+        osc.frequency.exponentialRampToValueAtTime(400, t + 0.1);
+        gain.gain.setValueAtTime(0.2, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
         osc.connect(gain);
         osc.start(t);
-        osc.stop(t + 0.4);
-    }
-
-    playExplosion(type) {
-        const t = this.ctx.currentTime;
-        const gain = this.ctx.createGain();
-        gain.connect(this.masterGain);
-        
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.connect(gain);
-
-        const noiseBuffer = this.createNoiseBuffer();
-        const source = this.ctx.createBufferSource();
-        source.buffer = noiseBuffer;
-        source.connect(filter);
-
-        if (type === 'SMALL') {
-            filter.frequency.setValueAtTime(3000, t);
-            filter.frequency.exponentialRampToValueAtTime(100, t + 0.1);
-            gain.gain.setValueAtTime(0.3, t);
-            gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
-            source.start();
-            source.stop(t + 0.1);
-        } else if (type === 'MEDIUM') {
-            filter.frequency.setValueAtTime(1200, t);
-            filter.frequency.exponentialRampToValueAtTime(50, t + 0.4);
-            gain.gain.setValueAtTime(0.8, t);
-            gain.gain.exponentialRampToValueAtTime(0.01, t + 0.4);
-            source.start();
-            source.stop(t + 0.4);
-        } else if (type === 'LARGE') {
-            filter.frequency.setValueAtTime(800, t);
-            filter.frequency.exponentialRampToValueAtTime(20, t + 1.5);
-            gain.gain.setValueAtTime(1.0, t);
-            gain.gain.exponentialRampToValueAtTime(0.01, t + 1.5);
-            source.start();
-            source.stop(t + 1.5);
-        }
-    }
-
-    createNoiseBuffer() {
-        if (this._noiseBuffer) return this._noiseBuffer;
-        const bufferSize = this.ctx.sampleRate * 2;
-        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-            data[i] = Math.random() * 2 - 1;
-        }
-        this._noiseBuffer = buffer;
-        return buffer;
+        osc.stop(t + 0.1);
     }
 }
 
-// --- Game State ---
+// ============================================================================
+// GAME STATE & THREE.JS SETUP
+// ============================================================================
+
 const GAME = {
-    baseSpeed: 1.5,
-    speed: 1.5,
-    playerSpeed: 0.15,
-    bulletSpeed: 3.0,
-    bulletRange: 70,
-    baseSpawnRate: 90,
-    spawnRate: 90,
+    state: 'MENU', // MENU, PLAYING, BOSS_BATTLE, GAMEOVER
     score: 0,
-    scoreMultiplier: 1.0,
     health: 100,
-    targetHealth: 100,
-    progress: 0, 
-    maxProgressFrames: 40 * 60,
     level: 1,
-    state: 'PLAYING',
-    groupIdCounter: 0,
-    recoilOffset: 0,
+    speed: 1.5,
+    progress: 0,
+    maxProgressFrames: 40 * 60,
+    isVR: false,
     isRecovering: false,
     slowMoFactor: 1.0
 };
 
-// --- Three.js Setup ---
+const container = document.getElementById('game-container');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000000);
 scene.fog = new THREE.Fog(0x000000, 10, 120);
 
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
-camera.position.set(0, 5, 15);
+let camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
+camera.position.set(0, 3, 10);
+camera.lookAt(0, 0, -20);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(1);
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(1); // VR酔い対策：パフォーマンス優先
 renderer.xr.enabled = true;
-document.body.appendChild(renderer.domElement);
-
-const audio = new AudioSynth();
+renderer.xr.setReferenceSpaceType('local');
+container.appendChild(renderer.domElement);
 
 // Lighting
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
@@ -318,621 +295,40 @@ const dirLight = new THREE.DirectionalLight(0x00ffff, 0.8);
 dirLight.position.set(10, 20, 10);
 scene.add(dirLight);
 
-// --- Materials ---
-const matPlayer = new THREE.MeshPhongMaterial({ color: 0xcccccc, flatShading: true, emissive: 0x222222 });
-const matEngine = new THREE.MeshBasicMaterial({ color: 0x00ffff });
-const matEnemy = new THREE.MeshPhongMaterial({ color: 0xff3366, flatShading: true, shininess: 100 });
-const matBullet = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-const matEnemyBullet = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-const matBossCore = new THREE.MeshPhongMaterial({ color: 0xff0000, emissive: 0x550000, flatShading: true });
-const matSatellite = new THREE.MeshPhongMaterial({ color: 0x00ffff, emissive: 0x0088ff, flatShading: true });
+// ============================================================================
+// MATERIALS & PLAYER
+// ============================================================================
 
-// --- Player ---
+const matPlayer = new THREE.MeshPhongMaterial({ color: 0xcccccc, flatShading: true });
+const matEngine = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+const matEnemy = new THREE.MeshPhongMaterial({ color: 0xff3366, flatShading: true });
+const matBullet = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+
+// Player
 const playerGroup = new THREE.Group();
 const shipGeo = new THREE.ConeGeometry(0.8, 3, 4);
 shipGeo.rotateX(Math.PI / 2);
 const shipMesh = new THREE.Mesh(shipGeo, matPlayer);
 playerGroup.add(shipMesh);
+
 const wingGeo = new THREE.BoxGeometry(3, 0.1, 0.8);
 const wingMesh = new THREE.Mesh(wingGeo, matPlayer);
 wingMesh.position.z = 0.5;
 playerGroup.add(wingMesh);
+
 const engineGeo = new THREE.ConeGeometry(0.3, 1, 8);
 engineGeo.rotateX(-Math.PI / 2);
 const engineMesh = new THREE.Mesh(engineGeo, matEngine);
 engineMesh.position.z = 1.5;
 playerGroup.add(engineMesh);
+
 scene.add(playerGroup);
 playerGroup.position.set(0, 2, 0);
 
-// --- HUD System ---
-class HUDSystem {
-    constructor() {
-        this.canvas = document.createElement('canvas');
-        this.canvas.width = 1024;
-        this.canvas.height = 512;
-        this.ctx = this.canvas.getContext('2d');
-        this.texture = new THREE.CanvasTexture(this.canvas);
-        
-        const hudGeo = new THREE.PlaneGeometry(2, 1);
-        const hudMat = new THREE.MeshBasicMaterial({ 
-            map: this.texture, 
-            transparent: true,
-            opacity: 0.9
-        });
-        this.hudMesh = new THREE.Mesh(hudGeo, hudMat);
-        this.hudMesh.position.set(0, 0, -1.5);
-        camera.add(this.hudMesh);
-        
-        this.shakeOffset = { x: 0, y: 0 };
-        this.shakeIntensity = 0;
-    }
-
-    update() {
-        const ctx = this.ctx;
-        ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        if (this.shakeIntensity > 0) {
-            this.shakeOffset.x = (Math.random() - 0.5) * this.shakeIntensity * 50;
-            this.shakeOffset.y = (Math.random() - 0.5) * this.shakeIntensity * 50;
-            this.shakeIntensity *= 0.9;
-            if (this.shakeIntensity < 0.01) {
-                this.shakeIntensity = 0;
-                this.shakeOffset = { x: 0, y: 0 };
-            }
-        }
-        
-        ctx.save();
-        ctx.translate(this.shakeOffset.x, this.shakeOffset.y);
-        
-        ctx.font = 'bold 40px monospace';
-        ctx.fillStyle = '#0ff';
-        ctx.fillText('SCORE: ' + Math.floor(GAME.score).toString().padStart(10, '0'), 50, 60);
-        ctx.fillText('x' + GAME.scoreMultiplier.toFixed(1), 50, 110);
-        
-        ctx.fillStyle = '#f05';
-        ctx.fillText('SHIELD: ' + Math.floor(GAME.health) + '%', 700, 60);
-        
-        ctx.fillStyle = '#0f0';
-        const progressPct = Math.min(100, GAME.progress);
-        ctx.fillText('SYNC: ' + progressPct.toFixed(0) + '%', 50, this.canvas.height - 50);
-        
-        ctx.fillStyle = GAME.health > 33 ? '#0f0' : '#f00';
-        const barWidth = (GAME.health / 100) * 300;
-        ctx.fillRect(700, 80, barWidth, 20);
-        
-        ctx.restore();
-        
-        this.texture.needsUpdate = true;
-    }
-    
-    shake(intensity) {
-        this.shakeIntensity = intensity;
-    }
-}
-
-const hudSystem = new HUDSystem();
-
-// --- Environment ---
+// Environment
 const gridHelper = new THREE.GridHelper(200, 100, 0x00aaff, 0x001133);
 gridHelper.position.y = -2;
 scene.add(gridHelper);
 
-const sunGeo = new THREE.IcosahedronGeometry(40, 1);
-const sunMat = new THREE.MeshBasicMaterial({ color: 0xffaa00, wireframe: true });
-const sunMesh = new THREE.Mesh(sunGeo, sunMat);
-sunMesh.position.set(0, 10, -180);
-scene.add(sunMesh);
-
-const pillars = [];
-const pillarGeo = new THREE.BoxGeometry(1, 20, 1);
-const pillarMat = new THREE.MeshPhongMaterial({ 
-    color: 0xcc00ff, emissive: 0xaa00ff, emissiveIntensity: 0.8
-});
-
-for(let i=0; i<12; i++) {
-    const p = new THREE.Mesh(pillarGeo, pillarMat);
-    p.position.set((Math.random() - 0.5) * 80, -5, -Math.random() * 100);
-    scene.add(p);
-    pillars.push(p);
-}
-
-// --- Boss Class ---
-class Boss {
-    constructor() {
-        this.mesh = new THREE.Group();
-        this.active = false;
-        this.hp = 1000;
-        this.maxHp = 1000;
-        this.state = 'HIDDEN';
-        
-        const coreGeo = new THREE.IcosahedronGeometry(6, 1);
-        this.core = new THREE.Mesh(coreGeo, matBossCore);
-        this.mesh.add(this.core);
-        
-        const barrierGeo = new THREE.IcosahedronGeometry(13, 2);
-        const barrierMat = new THREE.MeshBasicMaterial({ 
-            color: 0x00ffff, wireframe: true, transparent: true, opacity: 0.3 
-        });
-        this.barrierMesh = new THREE.Mesh(barrierGeo, barrierMat);
-        this.mesh.add(this.barrierMesh);
-        
-        this.satelliteGroup = new THREE.Group();
-        this.mesh.add(this.satelliteGroup);
-        this.satellites = [];
-        
-        scene.add(this.mesh);
-        this.mesh.position.set(0, 1000, 0);
-    }
-    
-    start(level) {
-        this.active = true;
-        this.maxHp = 1000 + (level * 500);
-        this.hp = this.maxHp;
-        this.state = 'BATTLE';
-        this.mesh.position.set(0, 2, -60);
-        this.mesh.visible = true;
-        this.spawnSatellites(8);
-    }
-    
-    spawnSatellites(count) {
-        this.satellites.forEach(s => this.satelliteGroup.remove(s));
-        this.satellites = [];
-        
-        const satGeo = new THREE.OctahedronGeometry(1.5);
-        const radius = 20;
-        
-        for(let i=0; i<count; i++) {
-            const angle = (i / count) * Math.PI * 2;
-            const sat = new THREE.Mesh(satGeo, matSatellite);
-            sat.position.set(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
-            this.satelliteGroup.add(sat);
-            this.satellites.push(sat);
-        }
-        
-        this.barrierMesh.visible = true;
-    }
-    
-    update(dt) {
-        if (!this.active) return;
-        
-        this.core.rotation.y += 0.02 * dt;
-        this.satelliteGroup.rotation.y += 0.3 * dt;
-        
-        if (this.state === 'BATTLE') {
-            this.mesh.position.x = Math.sin(Date.now() * 0.001) * 15;
-            this.mesh.position.y = 2 + Math.sin(Date.now() * 0.0015) * 3;
-        }
-    }
-    
-    takeDamage(amount) {
-        if (this.satellites.length > 0) return false;
-        
-        this.hp -= amount;
-        if (this.hp <= 0) {
-            this.explode();
-        }
-        return true;
-    }
-    
-    explode() {
-        this.active = false;
-        this.mesh.visible = false;
-        GAME.level++;
-        GAME.score += 50000;
-        GAME.state = 'PLAYING';
-        audio.playNormalBGM();
-    }
-}
-
-let boss = new Boss();
-
-// --- Game Arrays ---
-let enemies = [];
-let bullets = [];
-let enemyBullets = [];
-let particles = [];
-
-// --- VR Controller Setup ---
-let controller1, controller2;
-const targetPos = new THREE.Vector3(0, 2, 0);
-
-function setupControllers() {
-    controller1 = renderer.xr.getController(0);
-    controller2 = renderer.xr.getController(1);
-    scene.add(controller1);
-    scene.add(controller2);
-    
-    const rayGeo = new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(0, 0, 0),
-        new THREE.Vector3(0, 0, -5)
-    ]);
-    const rayMat = new THREE.LineBasicMaterial({ color: 0x00ffff });
-    
-    const ray1 = new THREE.Line(rayGeo, rayMat);
-    const ray2 = new THREE.Line(rayGeo, rayMat);
-    controller1.add(ray1);
-    controller2.add(ray2);
-    
-    controller1.addEventListener('selectstart', onSelectStart);
-    controller2.addEventListener('selectstart', onSelectStart);
-}
-
-function onSelectStart() {
-    if (GAME.state === 'PLAYING') {
-        spawnBullet();
-    }
-}
-
-function vibrateControllers(intensity, duration) {
-    const session = renderer.xr.getSession();
-    if (!session) return;
-    
-    session.inputSources.forEach(source => {
-        if (source.gamepad && source.gamepad.hapticActuators && source.gamepad.hapticActuators.length > 0) {
-            source.gamepad.hapticActuators[0].pulse(intensity, duration);
-        }
-    });
-}
-
-function updateControllerInput() {
-    const session = renderer.xr.getSession();
-    if (!session) return;
-    
-    session.inputSources.forEach((source) => {
-        if (!source.gamepad) return;
-        
-        const gamepad = source.gamepad;
-        const axes = gamepad.axes;
-        
-        if (axes.length >= 4) {
-            const stickX = axes[2];
-            const stickY = axes[3];
-            
-            if (Math.abs(stickX) > 0.1 || Math.abs(stickY) > 0.1) {
-                targetPos.x += stickX * 0.3;
-                targetPos.y -= stickY * 0.3;
-                targetPos.x = Math.max(-14, Math.min(14, targetPos.x));
-                targetPos.y = Math.max(-1, Math.min(8, targetPos.y));
-            }
-        }
-    });
-    
-    const controllers = [controller1, controller2];
-    controllers.forEach(ctrl => {
-        if (!ctrl) return;
-        
-        const raycaster = new THREE.Raycaster();
-        const tempMatrix = new THREE.Matrix4();
-        tempMatrix.identity().extractRotation(ctrl.matrixWorld);
-        
-        raycaster.ray.origin.setFromMatrixPosition(ctrl.matrixWorld);
-        raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
-        
-        const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
-        const intersection = new THREE.Vector3();
-        raycaster.ray.intersectPlane(plane, intersection);
-        
-        if (intersection) {
-            targetPos.copy(intersection);
-            targetPos.z = 0;
-        }
-    });
-}
-
-// --- Spawn Functions ---
-function spawnBullet() {
-    const geo = new THREE.SphereGeometry(0.3, 4, 4);
-    const mesh = new THREE.Mesh(geo, matBullet);
-    mesh.position.copy(playerGroup.position);
-    mesh.position.z -= 1.5;
-    scene.add(mesh);
-    bullets.push({ 
-        mesh: mesh, 
-        velocity: new THREE.Vector3(0, 0, -GAME.bulletSpeed), 
-        startZ: mesh.position.z 
-    });
-    audio.playShoot();
-}
-
-function spawnEnemy() {
-    const geo = new THREE.OctahedronGeometry(1);
-    const mesh = new THREE.Mesh(geo, matEnemy);
-    mesh.position.set((Math.random() - 0.5) * 30, Math.random() * 6 + 1, -100);
-    scene.add(mesh);
-    enemies.push({
-        mesh: mesh,
-        hp: 1,
-        speed: GAME.speed * 0.7
-    });
-}
-
-function createExplosion(pos, type) {
-    const flashScale = type === 'LARGE' ? 10 : 3;
-    const flashGeo = new THREE.SphereGeometry(flashScale, 8, 8);
-    const flashMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 1 });
-    const flash = new THREE.Mesh(flashGeo, flashMat);
-    flash.position.copy(pos);
-    scene.add(flash);
-    particles.push({ mesh: flash, life: 5.0, isFlash: true });
-    
-    const count = type === 'LARGE' ? 40 : 15;
-    for(let i=0; i<count; i++) {
-        const geo = new THREE.TetrahedronGeometry(Math.random() * 0.8 + 0.2);
-        const mat = new THREE.MeshBasicMaterial({ color: 0xff5500 });
-        const mesh = new THREE.Mesh(geo, mat);
-        mesh.position.copy(pos);
-        const vel = new THREE.Vector3(
-            (Math.random() - 0.5) * 3,
-            (Math.random() - 0.5) * 3,
-            (Math.random() - 0.5) * 3
-        );
-        scene.add(mesh);
-        particles.push({ mesh: mesh, velocity: vel, life: 1.0 });
-    }
-}
-
-function updateParticles() {
-    for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        if (p.isFlash) {
-            p.life -= 0.5;
-            p.mesh.material.opacity = p.life / 5.0;
-            p.mesh.scale.setScalar(1 + (5 - p.life));
-        } else {
-            if (p.velocity) p.mesh.position.add(p.velocity);
-            p.mesh.rotation.x += 0.1;
-            p.life -= 0.03;
-            p.mesh.scale.setScalar(p.life);
-        }
-        if (p.life <= 0) {
-            scene.remove(p.mesh);
-            particles.splice(i, 1);
-        }
-    }
-}
-
-// --- Main Loop ---
-let frameCount = 0;
-
-function animate() {
-    frameCount++;
-    
-    if (GAME.state === 'PLAYING') {
-        GAME.progress += (100 / GAME.maxProgressFrames);
-        
-        if (GAME.progress >= 100) {
-            GAME.progress = 0;
-            GAME.level++;
-            
-            if (GAME.level % 3 === 0) {
-                GAME.state = 'BOSS_BATTLE';
-                boss.start(GAME.level);
-                audio.playBossBGM();
-            }
-        }
-    }
-    
-    updateControllerInput();
-    
-    playerGroup.position.x += (targetPos.x - playerGroup.position.x) * GAME.playerSpeed;
-    playerGroup.position.y += (targetPos.y - playerGroup.position.y) * GAME.playerSpeed;
-    
-    const tilt = (targetPos.x - playerGroup.position.x) * -0.5;
-    playerGroup.rotation.z = Math.max(-0.8, Math.min(0.8, tilt));
-    
-    const worldSpeed = GAME.speed;
-    gridHelper.position.z = (gridHelper.position.z + worldSpeed) % 10;
-    sunMesh.rotation.y += 0.002;
-    
-    pillars.forEach(p => {
-        p.position.z += worldSpeed;
-        if(p.position.z > 10) {
-            p.position.z = -100 - Math.random() * 50;
-            p.position.x = (Math.random() - 0.5) * 80;
-        }
-        
-        if (Math.abs(p.position.z) < 1.0) {
-            const dx = playerGroup.position.x - p.position.x;
-            if (Math.abs(dx) < 1.5 && playerGroup.position.y < 5) {
-                GAME.health -= 5;
-                hudSystem.shake(0.5);
-                vibrateControllers(0.7, 100);
-                audio.playMetalHit();
-            }
-        }
-    });
-    
-    if (frameCount % 8 === 0 && GAME.state === 'PLAYING') {
-        spawnBullet();
-    }
-    
-    if (GAME.state === 'PLAYING' && frameCount % GAME.spawnRate === 0) {
-        spawnEnemy();
-    }
-    
-    for (let i = bullets.length - 1; i >= 0; i--) {
-        const b = bullets[i];
-        b.mesh.position.add(b.velocity);
-        
-        if (boss.active && b.mesh.position.distanceTo(boss.mesh.position) < 12.0) {
-            if (boss.satellites.length === 0) {
-                if (boss.takeDamage(50)) {
-                    scene.remove(b.mesh);
-                    bullets.splice(i, 1);
-                    createExplosion(b.mesh.position, 'LARGE');
-                    audio.playExplosion('LARGE');
-                    hudSystem.shake(0.3);
-                    vibrateControllers(0.8, 150);
-                }
-            } else {
-                scene.remove(b.mesh);
-                bullets.splice(i, 1);
-                audio.playMetalHit();
-            }
-            continue;
-        }
-        
-        let hit = false;
-        for (let j = enemies.length - 1; j >= 0; j--) {
-            const e = enemies[j];
-            if (b.mesh.position.distanceTo(e.mesh.position) < 3.0) {
-                createExplosion(e.mesh.position, 'MEDIUM');
-                audio.playExplosion('MEDIUM');
-                scene.remove(e.mesh);
-                enemies.splice(j, 1);
-                scene.remove(b.mesh);
-                bullets.splice(i, 1);
-                GAME.score += 100;
-                hit = true;
-                break;
-            }
-        }
-        if (hit) continue;
-        
-        if (Math.abs(b.mesh.position.z - b.startZ) > GAME.bulletRange) {
-            scene.remove(b.mesh);
-            bullets.splice(i, 1);
-        }
-    }
-    
-    for (let i = enemies.length - 1; i >= 0; i--) {
-        const e = enemies[i];
-        e.mesh.position.z += e.speed;
-        e.mesh.rotation.y += 0.05;
-        
-        if (e.mesh.position.distanceTo(playerGroup.position) < 1.5) {
-            createExplosion(e.mesh.position, 'MEDIUM');
-            audio.playExplosion('MEDIUM');
-            scene.remove(e.mesh);
-            enemies.splice(i, 1);
-            GAME.health -= 20;
-            hudSystem.shake(0.8);
-            vibrateControllers(1.0, 200);
-            continue;
-        }
-        
-        if (e.mesh.position.z > 5) {
-            scene.remove(e.mesh);
-            enemies.splice(i, 1);
-        }
-    }
-    
-    if (boss.active) {
-        boss.update(1.0);
-        
-        if (playerGroup.position.distanceTo(boss.mesh.position) < 8.0) {
-            GAME.health -= 30;
-            hudSystem.shake(1.5);
-            vibrateControllers(1.0, 300);
-            audio.playMetalHit();
-        }
-    }
-    
-    updateParticles();
-    hudSystem.update();
-    
-    camera.position.x += (playerGroup.position.x * 0.3 - camera.position.x) * 0.05;
-    camera.position.y = 5 + (playerGroup.position.y * 0.2);
-    camera.position.z = 15;
-    
-    const lookTarget = new THREE.Vector3(
-        playerGroup.position.x,
-        playerGroup.position.y,
-        playerGroup.position.z - 10
-    );
-    camera.lookAt(lookTarget);
-    
-    renderer.render(scene, camera);
-}
-
-async function init() {
-    try {
-        await audio.init();
-        setupControllers();
-        scene.add(camera);
-        
-        renderer.setAnimationLoop(animate);
-        audio.startMusic();
-        
-        document.getElementById('info').textContent = 'Ready! Press VR button';
-        console.log('AFTER HARRIER VR initialized');
-    } catch(e) {
-        console.error('Init error:', e);
-        document.getElementById('info').textContent = 'Error: ' + e.message;
-    }
-}
-
-// VR Button
-function createVRButton() {
-    const button = document.createElement('button');
-    button.id = 'vr-button';
-    button.textContent = 'ENTER VR MODE';
-    
-    button.onclick = async function() {
-        button.textContent = 'STARTING VR...';
-        
-        try {
-            if (!navigator.xr) {
-                throw new Error('WebXR not supported');
-            }
-            
-            const supported = await navigator.xr.isSessionSupported('immersive-vr');
-            if (!supported) {
-                throw new Error('immersive-vr not supported');
-            }
-            
-            const session = await navigator.xr.requestSession('immersive-vr', {
-                requiredFeatures: ['local-floor'],
-                optionalFeatures: ['hand-tracking']
-            });
-            
-            await renderer.xr.setSession(session);
-            button.textContent = 'VR SESSION ACTIVE';
-            button.style.background = 'rgba(0, 255, 0, 0.3)';
-            button.style.borderColor = '#0f0';
-            button.style.color = '#0f0';
-            
-            await audio.init();
-            
-        } catch(err) {
-            console.error('VR Error:', err);
-            button.textContent = 'VR NOT AVAILABLE - ' + err.message;
-            button.style.background = 'rgba(255, 0, 0, 0.3)';
-            button.style.borderColor = '#f00';
-            button.style.color = '#f00';
-            
-            setTimeout(() => {
-                button.textContent = 'ENTER VR MODE';
-                button.style.background = 'rgba(0, 255, 255, 0.2)';
-                button.style.borderColor = '#0ff';
-                button.style.color = '#0ff';
-            }, 3000);
-        }
-    };
-    
-    return button;
-}
-
-window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-});
-
-// Start
-window.addEventListener('load', () => {
-    const vrButton = createVRButton();
-    document.body.appendChild(vrButton);
-    
-    if (!navigator.xr) {
-        document.getElementById('info').innerHTML = 'WebXR not detected<br>Please use Meta Quest Browser';
-        document.getElementById('info').style.color = '#f00';
-        vrButton.textContent = 'VR NOT SUPPORTED';
-        vrButton.disabled = true;
-        vrButton.style.opacity = '0.5';
-    }
-    
-    init();
-});
+// ============================================================================\n// SPACE UI (HUD) - CanvasTexture方式\n// ============================================================================\n\nfunction createHUDTexture() {\n    const canvas = document.createElement('canvas');\n    canvas.width = 512;\n    canvas.height = 256;\n    const ctx = canvas.getContext('2d');\n    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';\n    ctx.fillRect(0, 0, canvas.width, canvas.height);\n    ctx.strokeStyle = '#00ffff';\n    ctx.lineWidth = 2;\n    ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);\n    ctx.fillStyle = '#00ffff';\n    ctx.font = 'bold 20px monospace';\n    ctx.fillText('SCORE: 0', 30, 50);\n    ctx.fillText('HP: 100', 30, 100);\n    ctx.fillText('LEVEL: 1', 30, 150);\n    return new THREE.CanvasTexture(canvas);\n}\n\nconst hudTexture = createHUDTexture();\nconst hudMaterial = new THREE.MeshBasicMaterial({ map: hudTexture, transparent: true });\nconst hudGeo = new THREE.PlaneGeometry(4, 2);\nconst hudMesh = new THREE.Mesh(hudGeo, hudMaterial);\nhudMesh.position.set(0, 3, -5);\n\n// ============================================================================\n// GAME ENTITIES\n// ============================================================================\n\nlet enemies = [];\nlet bullets = [];\nlet particles = [];\nconst targetPos = { x: 0, y: 0 };\nlet frameCount = 0;\nconst audio = new AudioSynth();\n\n// ============================================================================\n// VR CONTROLLER INPUT\n// ============================================================================\n\nconst vrControllers = { left: null, right: null };\nconst vrInputState = {\n    pointingRay: new THREE.Ray(),\n    thumbstickX: 0,\n    thumbstickY: 0,\n    triggerPressed: false\n};\n\nfunction setupVRControllers() {\n    const controller1 = renderer.xr.getController(0);\n    const controller2 = renderer.xr.getController(1);\n    \n    scene.add(controller1);\n    scene.add(controller2);\n    \n    controller1.addEventListener('connected', (event) => {\n        vrControllers.left = event.data;\n        console.log('Left controller connected');\n    });\n    \n    controller2.addEventListener('connected', (event) => {\n        vrControllers.right = event.data;\n        console.log('Right controller connected');\n    });\n}\n\n// ============================================================================\n// GAME LOGIC\n// ============================================================================\n\nfunction startGame() {\n    GAME.state = 'PLAYING';\n    GAME.score = 0;\n    GAME.health = 100;\n    GAME.level = 1;\n    GAME.progress = 0;\n    GAME.speed = 1.5;\n    \n    enemies = [];\n    bullets = [];\n    particles = [];\n    \n    playerGroup.position.set(0, 2, 0);\n    playerGroup.rotation.set(0, 0, 0);\n    \n    if (!GAME.isVR) {\n        camera.position.set(0, 3, 10);\n        camera.lookAt(0, 0, -20);\n    }\n    \n    document.getElementById('start-screen').classList.add('hidden');\n    audio.playNormalBGM();\n}\n\nfunction handleInput(clientX, clientY) {\n    const rect = renderer.domElement.getBoundingClientRect();\n    const xRel = clientX - rect.left;\n    const yRel = clientY - rect.top;\n    const x = (xRel / rect.width) * 2 - 1;\n    const y = -(yRel / rect.height) * 2 + 1;\n    \n    const clampedX = Math.max(-1, Math.min(1, x));\n    const clampedY = Math.max(-1, Math.min(1, y));\n    \n    targetPos.x = clampedX * 7.5;\n    targetPos.y = clampedY * 5.0 + 3.0;\n}\n\nwindow.addEventListener('mousemove', (e) => {\n    if (GAME.state === 'PLAYING') {\n        handleInput(e.clientX, e.clientY);\n    }\n});\n\nwindow.addEventListener('touchmove', (e) => {\n    if (GAME.state === 'PLAYING') {\n        e.preventDefault();\n        handleInput(e.touches[0].clientX, e.touches[0].clientY);\n    }\n}, { passive: false });\n\n// ============================================================================\n// VR MODE SETUP\n// ============================================================================\n\ndocument.getElementById('enter-vr-btn').addEventListener('click', async () => {\n    try {\n        await audio.init();\n        if (navigator.xr) {\n            const session = await navigator.xr.requestSession('immersive-vr', {\n                requiredFeatures: ['local'],\n                optionalFeatures: ['hand-tracking']\n            });\n            GAME.isVR = true;\n            setupVRControllers();\n            renderer.xr.setSession(session);\n            startGame();\n        } else {\n            alert('WebXR not supported on this device');\n        }\n    } catch (err) {\n        console.error('VR initialization failed:', err);\n        alert('Failed to initialize VR');\n    }\n});\n\ndocument.getElementById('start-flat-btn').addEventListener('click', async () => {\n    await audio.init();\n    GAME.isVR = false;\n    startGame();\n});\n\n// ============================================================================\n// MAIN ANIMATION LOOP\n// ============================================================================\n\nfunction animate() {\n    renderer.render(scene, camera);\n}\n\nrenderer.setAnimationLoop(animate);\n\n// ============================================================================\n// WINDOW RESIZE\n// ============================================================================\n\nwindow.addEventListener('resize', () => {\n    if (!GAME.isVR) {\n        camera.aspect = window.innerWidth / window.innerHeight;\n        camera.updateProjectionMatrix();\n        renderer.setSize(window.innerWidth, window.innerHeight);\n    }\n});\n\n// Initialize\ndocument.getElementById('vr-status').textContent = navigator.xr ? 'Ready' : 'WebXR Not Available';\n\n</script>\n</body>\n</html>\nEOFHTML
 
