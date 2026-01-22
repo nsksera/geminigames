@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>180-Degree Space Defender</title>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://unpkg.com/aframe-environment-component/dist/aframe-environment-component.min.js"></script>
+  </head>
+  <body>
+    <script>
+      // グローバルスコア
+      let score = 0;
+
+      // 敵を生成するコンポーネント
+      AFRAME.registerComponent('enemy-spawner', {
+        init: function () {
+          this.timer = 0;
+          this.spawnInterval = 2000; // 2秒ごとに敵が出現
+        },
+        tick: function (time, timeDelta) {
+          this.timer += timeDelta;
+          if (this.timer > this.spawnInterval) {
+            this.spawnEnemy();
+            this.timer = 0;
+            // 徐々に難易度アップ（出現間隔を短くする）
+            if (this.spawnInterval > 500) this.spawnInterval -= 10;
+          }
+        },
+        spawnEnemy: function () {
+          const enemy = document.createElement('a-entity');
+          
+          // 敵の見た目（赤い球体）
+          enemy.setAttribute('geometry', {primitive: 'sphere', radius: 0.5});
+          enemy.setAttribute('material', {color: '#FF0000', metalness: 0.5, roughness: 0.5});
+          
+          // --- ここがポイント：前方180度（-90度〜90度）の範囲に限定 ---
+          const distance = 20; // プレイヤーからの距離
+          // -90度(-PI/2) 〜 90度(PI/2) の乱数を生成
+          const angle = (Math.random() * Math.PI) - (Math.PI / 2); 
+          
+          // 座標計算 (X:左右, Y:高さ, Z:奥行き)
+          const x = distance * Math.sin(angle);
+          const z = -distance * Math.cos(angle); // マイナスZが前方
+          const y = Math.random() * 5 + 1; // 高さは1m〜6mの間
+          
+          enemy.setAttribute('position', {x: x, y: y, z: z});
+
+          // プレイヤー（原点）に向かって動くアニメーション
+          enemy.setAttribute('animation', {
+            property: 'position',
+            to: '0 1.6 0', // プレイヤーの目の高さへ
+            dur: 5000,     // 5秒かけて到達
+            easing: 'linear'
+          });
+
+          // クリック（撃破）されたときの処理
+          enemy.classList.add('clickable'); // Raycasterの対象にする
+          enemy.addEventListener('click', function () {
+            score++;
+            document.querySelector('#scoreText').setAttribute('value', 'Score: ' + score);
+            // 爆発っぽい演出（消える瞬間に拡大）
+            enemy.setAttribute('animation__die', {
+              property: 'scale',
+              to: '3 3 3',
+              dur: 100,
+              easing: 'easeInQuad'
+            });
+            enemy.setAttribute('material', {opacity: 0});
+            
+            setTimeout(() => {
+                if(enemy.parentNode) enemy.parentNode.removeChild(enemy);
+            }, 100);
+          });
+
+          // 自分にぶつかったら消す（簡易的な処理）
+          setTimeout(() => {
+             if(enemy.parentNode) enemy.parentNode.removeChild(enemy);
+          }, 5000);
+
+          this.el.sceneEl.appendChild(enemy);
+        }
+      });
+    </script>
+
+    <a-scene background="color: #000">
+      <a-assets>
+        </a-assets>
+
+      <a-entity environment="preset: starry; ground: none; grid: none"></a-entity>
+
+      <a-entity enemy-spawner></a-entity>
+
+      <a-text id="scoreText" value="Score: 0" position="0 2.5 -3" align="center" color="#FFF" scale="1.5 1.5 1.5"></a-text>
+
+      <a-entity id="rig" position="0 0 0">
+        <a-camera position="0 1.6 0" look-controls="pointerLockEnabled: false">
+          <a-cursor color="yellow" fuse="false" raycaster="objects: .clickable"></a-cursor>
+        </a-camera>
+
+        <a-entity laser-controls="hand: left" raycaster="objects: .clickable; far: 50" line="color: red; opacity: 0.75"></a-entity>
+        <a-entity laser-controls="hand: right" raycaster="objects: .clickable; far: 50" line="color: red; opacity: 0.75"></a-entity>
+      </a-entity>
+      
+    </a-scene>
+  </body>
+</html>
