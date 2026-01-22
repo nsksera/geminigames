@@ -18,16 +18,34 @@
             color: #0f0;
             font-size: 14px;
             z-index: 100;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.7);
             padding: 10px;
+            border: 1px solid #0f0;
+        }
+        #vr-button {
+            position: fixed !important;
+            bottom: 20px !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            padding: 15px 40px !important;
+            border: 3px solid #0ff !important;
+            border-radius: 8px !important;
+            background: rgba(0, 255, 255, 0.2) !important;
+            color: #0ff !important;
+            font: bold 20px monospace !important;
+            cursor: pointer !important;
+            z-index: 9999 !important;
+            text-shadow: 0 0 10px #0ff !important;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5) !important;
+            display: block !important;
         }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
-    <div id="info">Press VR button to start</div>
+    <div id="info">Initializing...</div>
 
-<script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
 // ========================================
 // AFTER HARRIER VR Edition
 // WebXR対応版
@@ -138,7 +156,7 @@ class AudioSynth {
 
     stopMusic() {
         this.isPlaying = false;
-        cancelAnimationFrame(this.timerID);
+        if (this.timerID) cancelAnimationFrame(this.timerID);
     }
 
     playNormalBGM() {
@@ -286,13 +304,12 @@ const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerH
 camera.position.set(0, 5, 15);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(1); // VR Performance
+renderer.setPixelRatio(1);
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.xr.enabled = true;
 document.body.appendChild(renderer.domElement);
 
-// VR Button
-document.body.appendChild(THREE.VRButton.createButton(renderer));
+const audio = new AudioSynth();
 
 // Lighting
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
@@ -355,7 +372,6 @@ class HUDSystem {
         const ctx = this.ctx;
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // Apply shake to HUD instead of camera
         if (this.shakeIntensity > 0) {
             this.shakeOffset.x = (Math.random() - 0.5) * this.shakeIntensity * 50;
             this.shakeOffset.y = (Math.random() - 0.5) * this.shakeIntensity * 50;
@@ -517,9 +533,6 @@ let bullets = [];
 let enemyBullets = [];
 let particles = [];
 
-// --- Audio ---
-const audio = new AudioSynth();
-
 // --- VR Controller Setup ---
 let controller1, controller2;
 const targetPos = new THREE.Vector3(0, 2, 0);
@@ -530,7 +543,6 @@ function setupControllers() {
     scene.add(controller1);
     scene.add(controller2);
     
-    // Ray visualization
     const rayGeo = new THREE.BufferGeometry().setFromPoints([
         new THREE.Vector3(0, 0, 0),
         new THREE.Vector3(0, 0, -5)
@@ -542,7 +554,6 @@ function setupControllers() {
     controller1.add(ray1);
     controller2.add(ray2);
     
-    // Controller events
     controller1.addEventListener('selectstart', onSelectStart);
     controller2.addEventListener('selectstart', onSelectStart);
 }
@@ -553,8 +564,7 @@ function onSelectStart() {
     }
 }
 
-// Haptic feedback
-function vibrateControllers(intensity = 0.5, duration = 100) {
+function vibrateControllers(intensity, duration) {
     const session = renderer.xr.getSession();
     if (!session) return;
     
@@ -565,18 +575,16 @@ function vibrateControllers(intensity = 0.5, duration = 100) {
     });
 }
 
-// --- Controller Input ---
 function updateControllerInput() {
     const session = renderer.xr.getSession();
     if (!session) return;
     
-    session.inputSources.forEach((source, i) => {
+    session.inputSources.forEach((source) => {
         if (!source.gamepad) return;
         
         const gamepad = source.gamepad;
         const axes = gamepad.axes;
         
-        // Stick input (axes 2, 3)
         if (axes.length >= 4) {
             const stickX = axes[2];
             const stickY = axes[3];
@@ -590,7 +598,6 @@ function updateControllerInput() {
         }
     });
     
-    // Ray pointing
     const controllers = [controller1, controller2];
     controllers.forEach(ctrl => {
         if (!ctrl) return;
@@ -602,7 +609,6 @@ function updateControllerInput() {
         raycaster.ray.origin.setFromMatrixPosition(ctrl.matrixWorld);
         raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
         
-        // Intersect with movement plane
         const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
         const intersection = new THREE.Vector3();
         raycaster.ray.intersectPlane(plane, intersection);
@@ -641,7 +647,7 @@ function spawnEnemy() {
     });
 }
 
-function createExplosion(pos, type = 'MEDIUM') {
+function createExplosion(pos, type) {
     const flashScale = type === 'LARGE' ? 10 : 3;
     const flashGeo = new THREE.SphereGeometry(flashScale, 8, 8);
     const flashMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 1 });
@@ -666,7 +672,6 @@ function createExplosion(pos, type = 'MEDIUM') {
     }
 }
 
-// --- Update Functions ---
 function updateParticles() {
     for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
@@ -708,22 +713,18 @@ function animate() {
         }
     }
     
-    // Update controller input
     updateControllerInput();
     
-    // Update player position
     playerGroup.position.x += (targetPos.x - playerGroup.position.x) * GAME.playerSpeed;
     playerGroup.position.y += (targetPos.y - playerGroup.position.y) * GAME.playerSpeed;
     
     const tilt = (targetPos.x - playerGroup.position.x) * -0.5;
     playerGroup.rotation.z = Math.max(-0.8, Math.min(0.8, tilt));
     
-    // Environment scroll
     const worldSpeed = GAME.speed;
     gridHelper.position.z = (gridHelper.position.z + worldSpeed) % 10;
     sunMesh.rotation.y += 0.002;
     
-    // Pillars
     pillars.forEach(p => {
         p.position.z += worldSpeed;
         if(p.position.z > 10) {
@@ -731,7 +732,6 @@ function animate() {
             p.position.x = (Math.random() - 0.5) * 80;
         }
         
-        // Collision check
         if (Math.abs(p.position.z) < 1.0) {
             const dx = playerGroup.position.x - p.position.x;
             if (Math.abs(dx) < 1.5 && playerGroup.position.y < 5) {
@@ -743,22 +743,18 @@ function animate() {
         }
     });
     
-    // Auto fire
     if (frameCount % 8 === 0 && GAME.state === 'PLAYING') {
         spawnBullet();
     }
     
-    // Spawn enemies
     if (GAME.state === 'PLAYING' && frameCount % GAME.spawnRate === 0) {
         spawnEnemy();
     }
     
-    // Update bullets
     for (let i = bullets.length - 1; i >= 0; i--) {
         const b = bullets[i];
         b.mesh.position.add(b.velocity);
         
-        // Check boss collision
         if (boss.active && b.mesh.position.distanceTo(boss.mesh.position) < 12.0) {
             if (boss.satellites.length === 0) {
                 if (boss.takeDamage(50)) {
@@ -777,7 +773,6 @@ function animate() {
             continue;
         }
         
-        // Check enemy collision
         let hit = false;
         for (let j = enemies.length - 1; j >= 0; j--) {
             const e = enemies[j];
@@ -795,20 +790,17 @@ function animate() {
         }
         if (hit) continue;
         
-        // Out of range
         if (Math.abs(b.mesh.position.z - b.startZ) > GAME.bulletRange) {
             scene.remove(b.mesh);
             bullets.splice(i, 1);
         }
     }
     
-    // Update enemies
     for (let i = enemies.length - 1; i >= 0; i--) {
         const e = enemies[i];
         e.mesh.position.z += e.speed;
         e.mesh.rotation.y += 0.05;
         
-        // Player collision
         if (e.mesh.position.distanceTo(playerGroup.position) < 1.5) {
             createExplosion(e.mesh.position, 'MEDIUM');
             audio.playExplosion('MEDIUM');
@@ -820,18 +812,15 @@ function animate() {
             continue;
         }
         
-        // Out of bounds
         if (e.mesh.position.z > 5) {
             scene.remove(e.mesh);
             enemies.splice(i, 1);
         }
     }
     
-    // Update boss
     if (boss.active) {
         boss.update(1.0);
         
-        // Boss collision with player
         if (playerGroup.position.distanceTo(boss.mesh.position) < 8.0) {
             GAME.health -= 30;
             hudSystem.shake(1.5);
@@ -840,18 +829,13 @@ function animate() {
         }
     }
     
-    // Update particles
     updateParticles();
-    
-    // Update HUD
     hudSystem.update();
     
-    // Camera follow (TPS - Third Person)
     camera.position.x += (playerGroup.position.x * 0.3 - camera.position.x) * 0.05;
     camera.position.y = 5 + (playerGroup.position.y * 0.2);
     camera.position.z = 15;
     
-    // Look at player from behind
     const lookTarget = new THREE.Vector3(
         playerGroup.position.x,
         playerGroup.position.y,
@@ -862,21 +846,93 @@ function animate() {
     renderer.render(scene, camera);
 }
 
-// --- Initialization ---
 async function init() {
-    await audio.init();
-    setupControllers();
-    
-    renderer.setAnimationLoop(animate);
-    audio.startMusic();
-    
-    console.log('AFTER HARRIER VR Ready');
+    try {
+        await audio.init();
+        setupControllers();
+        scene.add(camera);
+        
+        renderer.setAnimationLoop(animate);
+        audio.startMusic();
+        
+        document.getElementById('info').textContent = 'Ready! Press VR button';
+        console.log('AFTER HARRIER VR initialized');
+    } catch(e) {
+        console.error('Init error:', e);
+        document.getElementById('info').textContent = 'Error: ' + e.message;
+    }
 }
 
-init();
+// VR Button
+function createVRButton() {
+    const button = document.createElement('button');
+    button.id = 'vr-button';
+    button.textContent = 'ENTER VR MODE';
+    
+    button.onclick = async function() {
+        button.textContent = 'STARTING VR...';
+        
+        try {
+            if (!navigator.xr) {
+                throw new Error('WebXR not supported');
+            }
+            
+            const supported = await navigator.xr.isSessionSupported('immersive-vr');
+            if (!supported) {
+                throw new Error('immersive-vr not supported');
+            }
+            
+            const session = await navigator.xr.requestSession('immersive-vr', {
+                requiredFeatures: ['local-floor'],
+                optionalFeatures: ['hand-tracking']
+            });
+            
+            await renderer.xr.setSession(session);
+            button.textContent = 'VR SESSION ACTIVE';
+            button.style.background = 'rgba(0, 255, 0, 0.3)';
+            button.style.borderColor = '#0f0';
+            button.style.color = '#0f0';
+            
+            await audio.init();
+            
+        } catch(err) {
+            console.error('VR Error:', err);
+            button.textContent = 'VR NOT AVAILABLE - ' + err.message;
+            button.style.background = 'rgba(255, 0, 0, 0.3)';
+            button.style.borderColor = '#f00';
+            button.style.color = '#f00';
+            
+            setTimeout(() => {
+                button.textContent = 'ENTER VR MODE';
+                button.style.background = 'rgba(0, 255, 255, 0.2)';
+                button.style.borderColor = '#0ff';
+                button.style.color = '#0ff';
+            }, 3000);
+        }
+    };
+    
+    return button;
+}
 
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
+
+// Start
+window.addEventListener('load', () => {
+    const vrButton = createVRButton();
+    document.body.appendChild(vrButton);
+    
+    if (!navigator.xr) {
+        document.getElementById('info').innerHTML = 'WebXR not detected<br>Please use Meta Quest Browser';
+        document.getElementById('info').style.color = '#f00';
+        vrButton.textContent = 'VR NOT SUPPORTED';
+        vrButton.disabled = true;
+        vrButton.style.opacity = '0.5';
+    }
+    
+    init();
+});
+
