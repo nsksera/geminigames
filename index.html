@@ -10,20 +10,33 @@
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #000;
+            background-color: #111;
             color: #fff;
             font-family: 'Press Start 2P', cursive;
             user-select: none;
             -webkit-user-select: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #aspect-container {
+            position: relative;
+            width: 100vmin;
+            height: 100vmin;
+            background-color: #000;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
         }
 
         #game-container {
             position: absolute;
             top: 0;
             left: 0;
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
+            width: 100%;
+            height: 100%;
         }
 
         #ui-layer {
@@ -53,7 +66,8 @@
 
         .hud-center {
             position: absolute;
-            top: 20px;
+            /* 修正: 位置をさらに下げて上部警告帯(zone-top)との重なりを回避 */
+            top: 85px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 25;
@@ -62,10 +76,11 @@
         /* Boss HUD */
         #boss-hud {
             position: absolute;
-            top: 80px;
+            /* 修正: SYNC RATEの位置変更に合わせて調整 */
+            top: 135px;
             left: 50%;
             transform: translateX(-50%);
-            width: 60%;
+            width: 80%;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -80,23 +95,25 @@
 
         .boss-name {
             color: #ff0000;
-            font-size: 12px;
+            font-size: 10px;
             margin-bottom: 5px;
             text-shadow: 0 0 5px #ff0000;
             letter-spacing: 2px;
+            white-space: nowrap;
         }
 
         .boss-state-text {
             color: #ffff00;
-            font-size: 10px;
+            font-size: 8px;
             margin-top: 5px;
             text-shadow: 0 0 5px #ffff00;
             display: none;
+            white-space: nowrap;
         }
 
         .boss-hp-container {
             width: 100%;
-            height: 10px;
+            height: 8px;
             background: #300;
             border: 1px solid #ff0000;
             box-shadow: 0 0 10px #ff0000;
@@ -113,7 +130,7 @@
         .cyber-panel {
             background: rgba(0, 10, 20, 0.8);
             border: 1px solid #00ffff;
-            padding: 10px 15px;
+            padding: 8px 10px;
             transform: skewX(-15deg);
             box-shadow: 0 0 10px rgba(0, 255, 255, 0.5), inset 0 0 20px rgba(0, 255, 255, 0.1);
             position: relative;
@@ -141,7 +158,7 @@
         }
 
         .score-label {
-            font-size: 10px;
+            font-size: 8px;
             color: #00ffff;
             display: block;
             margin-bottom: 4px;
@@ -149,27 +166,28 @@
         }
 
         .score-value {
-            font-size: 14px; 
+            font-size: 12px; 
             color: #fff;
             text-shadow: 0 0 5px #00ffff;
             white-space: nowrap;
         }
         
         .multiplier-box {
-            font-size: 10px;
+            font-size: 8px;
             color: #ffff00;
             margin-top: 5px;
         }
 
         /* Health Bar */
         .health-container {
-            width: 150px;
-            height: 12px;
+            width: 100px;
+            height: 8px;
             background: #111;
             border: 1px solid #ff0055;
-            padding: 3px;
+            padding: 2px;
             position: relative;
             box-shadow: 0 0 8px rgba(255, 0, 85, 0.5);
+            box-sizing: border-box;
         }
 
         .health-fill {
@@ -211,17 +229,18 @@
 
         .health-label {
             position: absolute;
-            top: -18px;
-            right: 0;
-            font-size: 10px;
+            top: -16px;
+            /* 修正: 右端が欠けないように余裕をさらに増やす (4px -> 10px) */
+            right: 10px;
+            font-size: 8px;
             color: #ff0055;
             transform: skewX(15deg);
         }
 
         /* Progress Bar */
         .progress-container {
-            width: 200px;
-            height: 8px;
+            width: 150px;
+            height: 6px;
             background: #111;
             border: 1px solid #00ff00;
             padding: 2px;
@@ -305,6 +324,7 @@
             animation: floatUp 0.8s forwards;
             text-shadow: 0 0 10px #ff00ff, 2px 2px 0 #fff;
             white-space: nowrap;
+            transform: translateX(-50%);
         }
         
         .bonus-text {
@@ -319,7 +339,7 @@
             left: 50%;
             transform: translateX(-50%);
             color: #00ff00;
-            font-size: 32px;
+            font-size: 24px;
             font-weight: bold;
             text-align: center;
             text-shadow: 0 0 10px #00ff00, 2px 2px 0 #000;
@@ -327,12 +347,13 @@
             z-index: 100;
             width: 100%;
             white-space: pre;
+            line-height: 1.5;
         }
         
         .warning-announcement {
             color: #ff0000 !important;
             text-shadow: 0 0 15px #ff0000, 2px 2px 0 #fff !important;
-            font-size: 48px !important;
+            font-size: 32px !important;
             animation: blink-warning 0.2s infinite;
         }
 
@@ -357,9 +378,9 @@
         }
 
         @keyframes floatUp {
-            0% { transform: translateY(0) scale(0.5); opacity: 0; }
-            50% { transform: translateY(-30px) scale(1.5); opacity: 1; }
-            100% { transform: translateY(-60px) scale(1); opacity: 0; }
+            0% { transform: translateX(-50%) translateY(0) scale(0.5); opacity: 0; }
+            50% { transform: translateX(-50%) translateY(-30px) scale(1.5); opacity: 1; }
+            100% { transform: translateX(-50%) translateY(-60px) scale(1); opacity: 0; }
         }
 
         /* Damage Overlay */
@@ -384,36 +405,37 @@
         /* Side Warning Indicators */
         .side-warning {
             position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 40px;
-            color: rgba(255, 0, 0, 0.8);
+            top: 0;
+            bottom: 0;
+            width: 40px;
+            font-size: 20px;
+            color: rgba(255, 0, 0, 0.9);
             font-weight: bold;
             text-shadow: 0 0 10px red;
-            display: none;
-            animation: blink-warning 0.2s infinite;
+            display: none !important;
+            animation: blink-warning 0.1s infinite;
             pointer-events: none;
             writing-mode: vertical-rl;
             text-orientation: upright;
-            height: 100vh;
             text-align: center;
             justify-content: center;
-            z-index: 55;
+            align-items: center;
+            z-index: 99;
         }
 
         .side-warning.active {
-            display: flex;
+            display: flex !important;
         }
 
         .side-warning.left {
             left: 0;
-            background: linear-gradient(to right, rgba(255,0,0,0.5), rgba(255,0,0,0));
+            background: linear-gradient(to right, rgba(255,0,0,0.8), rgba(255,0,0,0));
             border-right: 4px solid red;
         }
 
         .side-warning.right {
             right: 0;
-            background: linear-gradient(to left, rgba(255,0,0,0.5), rgba(255,0,0,0));
+            background: linear-gradient(to left, rgba(255,0,0,0.8), rgba(255,0,0,0));
             border-left: 4px solid red;
         }
 
@@ -434,7 +456,7 @@
         }
 
         h1 {
-            font-size: 40px;
+            font-size: 32px;
             color: #ff0055;
             text-shadow: 4px 4px 0 #00ffff;
             margin-bottom: 10px;
@@ -444,7 +466,7 @@
         }
 
         h2 {
-            font-size: 14px;
+            font-size: 10px;
             color: #fff;
             margin-bottom: 40px;
             text-align: center;
@@ -455,8 +477,8 @@
             background: linear-gradient(45deg, #ff0055, #ff6600);
             border: 4px solid #fff;
             color: #fff;
-            padding: 20px 40px;
-            font-size: 20px;
+            padding: 15px 30px;
+            font-size: 16px;
             font-family: inherit;
             cursor: pointer;
             text-transform: uppercase;
@@ -482,8 +504,8 @@
             position: fixed;
             left: 0;
             top: 0;
-            width: 100vw;
-            height: 100vh;
+            width: 100%;
+            height: 100%;
             background: linear-gradient(
                 to bottom,
                 rgba(255,255,255,0),
@@ -500,94 +522,96 @@
 </head>
 <body>
 
-    <div id="game-container"></div>
-    <div class="scanlines"></div>
+    <div id="aspect-container">
+        <div id="game-container"></div>
+        <div class="scanlines"></div>
 
-    <div id="ui-layer">
-        <div id="damage-overlay"></div>
-        <div id="warning-left" class="side-warning left">WARNING</div>
-        <div id="warning-right" class="side-warning right">WARNING</div>
-        
-        <!-- Top HUD -->
-        <div class="hud-top-container">
-            <div class="cyber-panel">
-                <div class="cyber-content">
-                    <span class="score-label">SCORE</span>
-                    <span class="score-value" id="score">0000000000</span>
-                    <div class="multiplier-box">X <span id="multiplier">1.0</span> RATE</div>
-                </div>
-            </div>
-
-            <div class="cyber-panel" style="border-color: #ff0055; box-shadow: 0 0 10px rgba(255, 0, 85, 0.5);">
-                <div class="cyber-content">
-                    <div class="health-label">SHIELD</div>
-                    <div class="health-container">
-                        <div class="health-fill" id="health-bar"></div>
+        <div id="ui-layer">
+            <div id="damage-overlay"></div>
+            <div id="warning-left" class="side-warning left">WARNING</div>
+            <div id="warning-right" class="side-warning right">WARNING</div>
+            
+            <!-- Top HUD -->
+            <div class="hud-top-container">
+                <div class="cyber-panel">
+                    <div class="cyber-content">
+                        <span class="score-label">SCORE</span>
+                        <span class="score-value" id="score">0000000000</span>
+                        <div class="multiplier-box">X <span id="multiplier">1.0</span> RATE</div>
                     </div>
                 </div>
-                <style>
-                    .cyber-panel[style*="ff0055"]::before {
-                        background: #ff0055;
-                        box-shadow: 0 0 5px #ff0055;
-                    }
-                </style>
-            </div>
-        </div>
 
-        <!-- Boss HUD -->
-        <div id="boss-hud">
-            <span class="boss-name">WARNING: HEX-OBLITERATOR</span>
-            <div class="boss-hp-container">
-                <div class="boss-hp-fill" id="boss-hp-bar"></div>
-            </div>
-            <div id="boss-state-text" class="boss-state-text">SHIELD OFFLINE - ATTACK CORE!</div>
-        </div>
-
-        <!-- Center Progress -->
-        <div class="hud-center">
-            <div class="cyber-panel" style="border-color: #00ff00; box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);">
-                <div class="cyber-content">
-                    <div class="score-label" style="color: #00ff00; text-align: center;">SYNC RATE</div>
-                    <div class="progress-container">
-                        <div class="progress-fill" id="progress-bar"></div>
+                <div class="cyber-panel" style="border-color: #ff0055; box-shadow: 0 0 10px rgba(255, 0, 85, 0.5);">
+                    <div class="cyber-content">
+                        <div class="health-label">SHIELD</div>
+                        <div class="health-container">
+                            <div class="health-fill" id="health-bar"></div>
+                        </div>
                     </div>
+                    <style>
+                        .cyber-panel[style*="ff0055"]::before {
+                            background: #ff0055;
+                            box-shadow: 0 0 5px #ff0055;
+                        }
+                    </style>
                 </div>
-                <style>
-                    .cyber-panel[style*="00ff00"]::before {
-                        background: #00ff00;
-                        box-shadow: 0 0 5px #00ff00;
-                    }
-                </style>
             </div>
-        </div>
 
-        <!-- Danger Zones -->
-        <div class="danger-zone zone-top">
-            <span class="danger-text">/// CEILING LIMIT ///</span>
-        </div>
-        
-        <div class="danger-zone zone-bottom">
-            <div id="bottom-message-container" style="text-align: center;">
-                <span class="danger-text" id="bottom-warning"></span>
+            <!-- Boss HUD -->
+            <div id="boss-hud">
+                <span class="boss-name">WARNING: HEX-OBLITERATOR</span>
+                <div class="boss-hp-container">
+                    <div class="boss-hp-fill" id="boss-hp-bar"></div>
+                </div>
+                <div id="boss-state-text" class="boss-state-text">SHIELD OFFLINE - ATTACK CORE!</div>
             </div>
+
+            <!-- Center Progress -->
+            <div class="hud-center">
+                <div class="cyber-panel" style="border-color: #00ff00; box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);">
+                    <div class="cyber-content">
+                        <div class="score-label" style="color: #00ff00; text-align: center;">SYNC RATE</div>
+                        <div class="progress-container">
+                            <div class="progress-fill" id="progress-bar"></div>
+                        </div>
+                    </div>
+                    <style>
+                        .cyber-panel[style*="00ff00"]::before {
+                            background: #00ff00;
+                            box-shadow: 0 0 5px #00ff00;
+                        }
+                    </style>
+                </div>
+            </div>
+
+            <!-- Danger Zones -->
+            <div class="danger-zone zone-top">
+                <span class="danger-text">/// CEILING LIMIT ///</span>
+            </div>
+            
+            <div class="danger-zone zone-bottom">
+                <div id="bottom-message-container" style="text-align: center;">
+                    <span class="danger-text" id="bottom-warning"></span>
+                </div>
+            </div>
+
+            <div id="effects-container" style="position:absolute; width:100%; height:100%; pointer-events:none;"></div>
         </div>
 
-        <div id="effects-container" style="position:absolute; width:100%; height:100%; pointer-events:none;"></div>
-    </div>
-
-    <div id="overlay-screen">
-        <h1 id="title-text">AFTER<br>HARRIER</h1>
-        <!-- 順序変更: stats (SYNC RATE) を上に配置 -->
-        <h2 id="stats-text" style="color: #00ff00; margin-top: 10px; min-height: 1em;"></h2>
-        <h2 id="subtitle-text">DRAG TO MOVE / AUTO FIRE</h2>
-        <button class="btn" id="start-btn">INSERT COIN</button>
+        <div id="overlay-screen">
+            <h1 id="title-text">AFTER<br>HARRIER</h1>
+            <!-- 順序変更: stats (SYNC RATE) を上に配置 -->
+            <h2 id="stats-text" style="color: #00ff00; margin-top: 10px; min-height: 1em;"></h2>
+            <h2 id="subtitle-text">DRAG TO MOVE / AUTO FIRE</h2>
+            <button class="btn" id="start-btn">INSERT COIN</button>
+        </div>
     </div>
 
 <script>
 /**
  * AFTER HARRIER
  * A retro-style 3D rail shooter using Three.js and Web Audio API.
- * Updated: Enhanced Boss Core Hit/Death Effects, Anti-bias Ramming.
+ * Updated: UI Layout Fix, Shield Label Fix, Extended Movement Range.
  */
 
 // --- 1. Audio System ---
@@ -989,8 +1013,8 @@ const GAME = {
     maxProgressFrames: 40 * 60, // 40 seconds per level
     level: 1,
     state: 'MENU', // MENU, PLAYING, BOSS_WARNING, BOSS_BATTLE, CRASHING, GAMEOVER
-    width: window.innerWidth,
-    height: window.innerHeight,
+    width: 0, // Set in resize
+    height: 0, // Set in resize
     groupIdCounter: 0,
     recoilOffset: 0,
     isRecovering: false,
@@ -1004,13 +1028,13 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000000);
 scene.fog = new THREE.Fog(0x000000, 10, 120);
 
-const camera = new THREE.PerspectiveCamera(60, GAME.width / GAME.height, 0.1, 200);
+// Aspect ratio is always 1.0 because container is square
+const camera = new THREE.PerspectiveCamera(60, 1.0, 0.1, 200);
 camera.position.set(0, 3, 10);
 camera.lookAt(0, 0, -20);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(GAME.width, GAME.height);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+// Size set in resize handler
 container.appendChild(renderer.domElement);
 
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
@@ -1343,14 +1367,19 @@ class Boss {
 
         this.ramTarget.set(targetX, 2, 5); // Yはプレイヤーの高さ付近、Zは手前
 
-        // 警告表示 (追加機能)
+        // 警告表示 (修正: classList操作を確実に)
+        // 一度リセットしてからアクティブにする
+        document.getElementById('warning-left').classList.remove('active');
+        document.getElementById('warning-right').classList.remove('active');
+        
         if (targetX > 0) {
             const w = document.getElementById('warning-right');
-            w.classList.add('active');
+            // DOM更新タイミングをずらす
+            setTimeout(() => w.classList.add('active'), 10);
             setTimeout(() => w.classList.remove('active'), 2500);
         } else {
             const w = document.getElementById('warning-left');
-            w.classList.add('active');
+            setTimeout(() => w.classList.add('active'), 10);
             setTimeout(() => w.classList.remove('active'), 2500);
         }
 
@@ -1528,11 +1557,25 @@ let boss;
 // --- Logic ---
 
 function handleInput(clientX, clientY) {
-    const x = (clientX / GAME.width) * 2 - 1;
-    const y = -(clientY / GAME.height) * 2 + 1;
-    targetPos.x = x * 12; 
-    targetPos.y = y * 8 + 2; 
-    targetPos.y = Math.max(0.5, Math.min(targetPos.y, 8));
+    // 修正: 正方形領域(game-container)基準の座標変換
+    const rect = renderer.domElement.getBoundingClientRect();
+    
+    // 領域外なら無視（またはクランプ）
+    const xRel = clientX - rect.left;
+    const yRel = clientY - rect.top;
+
+    // 正規化 (-1 ~ 1)
+    const x = (xRel / rect.width) * 2 - 1;
+    const y = -(yRel / rect.height) * 2 + 1;
+
+    // 範囲制限
+    const clampedX = Math.max(-1, Math.min(1, x));
+    const clampedY = Math.max(-1, Math.min(1, y));
+
+    // 修正: 移動範囲の拡大 (横: 7.5, 縦: 5.0)
+    // 画面端の敵を狙えるように、係数を増やして可動域を広げた
+    targetPos.x = clampedX * 7.5; 
+    targetPos.y = clampedY * 5.0 + 3.0; 
 }
 
 window.addEventListener('mousemove', (e) => { 
@@ -1794,15 +1837,27 @@ function showCenterAnnouncement(text, isWarning = false) {
 }
 
 function showComboText(text, isBonus = false) {
+    // 修正: 座標計算をコンテナ基準に
+    const container = document.getElementById('effects-container');
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    
     const el = document.createElement('div');
     el.className = 'combo-text';
     if(isBonus) el.classList.add('bonus-text');
     el.innerText = text;
-    const screenX = (window.innerWidth / 2) + (Math.random() - 0.5) * 100;
-    const screenY = (window.innerHeight / 2) - 50;
-    el.style.left = screenX + 'px';
-    el.style.top = screenY + 'px';
-    document.getElementById('effects-container').appendChild(el);
+    
+    const centerX = width / 2;
+    const centerY = height / 2;
+    
+    // 中央基準でランダムオフセット
+    const x = centerX + (Math.random() - 0.5) * (width * 0.3); 
+    const y = centerY - 50;
+    
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    
+    container.appendChild(el);
     setTimeout(() => el.remove(), isBonus ? 2000 : 800);
 }
 
@@ -2443,12 +2498,22 @@ function animate() {
 }
 
 window.addEventListener('resize', () => {
-    GAME.width = window.innerWidth;
-    GAME.height = window.innerHeight;
-    camera.aspect = GAME.width / GAME.height;
+    // 修正: 正方形維持のためのリサイズ処理
+    const aspectContainer = document.getElementById('aspect-container');
+    const width = aspectContainer.clientWidth;
+    const height = aspectContainer.clientHeight;
+    
+    GAME.width = width;
+    GAME.height = height;
+    
+    // カメラアスペクトは常に1.0
+    camera.aspect = 1.0;
     camera.updateProjectionMatrix();
-    renderer.setSize(GAME.width, GAME.height);
+    renderer.setSize(width, height);
 });
+
+// 初期リサイズ実行
+window.dispatchEvent(new Event('resize'));
 
 animate();
 
